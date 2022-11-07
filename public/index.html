@@ -2,17 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <link rel="stylesheet" href="public/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
     <script src="public/main.js"></script>
     <title>Document</title>
 </head>
 <body>
-    <h2>Pronosticos Eltec</h2>
-    <input type="date" id="fecha_inicio" placeholder="Fecha Incial">
-    <input type="date" id="fecha_fin" placeholder="Fecha Final">
-    <button onclick="filtrar()">Aceptar</button>
-    <div id="tabla"></div>
+    <div class="controles">
+        <h2>Pronosticos Eltec</h2>
+        <label for="fecha_inicio">Fecha inicio</label><input type="date" id="fecha_inicio" placeholder="Fecha Incial">
+        <label for="fecha_fin">Fecha fin</label><input type="date" id="fecha_fin" placeholder="Fecha Final">
+        <label>Producto</label><div class="select-field" id="product-select"></div>
+        <label>Cliente</label><div class="select-field" id="customer-select"></div>
+        <button onclick="filtrar()">Aceptar</button>
+    </div>
+    <div class="resultados">
+        <div id="tabla"></div>
+    </div>    
 </body>
 </html>
