@@ -1,31 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <link rel="stylesheet" href="public/main.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
-    <script src="public/main.js"></script>
-    <title>Document</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet"/>
+    <script src="https://kit.fontawesome.com/155f922cd0.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>    
+    <script src="public/main.js" defer></script>
+    <title>Pronosticos Eltec</title>
 </head>
 <body>
-    <div class="controles">
-        <h2>Pronosticos Eltec</h2>
-        <label for="fecha_inicio">Fecha inicio</label><input type="date" id="fecha_inicio" placeholder="Fecha Incial">
-        <label for="fecha_fin">Fecha fin</label><input type="date" id="fecha_fin" placeholder="Fecha Final">
-        <label>Producto</label><div class="select-field" id="product-select"></div>
-        <label>Cliente</label><div class="select-field" id="customer-select"></div>
-        <button onclick="filtrar()">Aceptar</button>
+    <div class="header">
+        <div class="title-div">
+            <h2>Pron&oacute;sticos Eltec</h2>
+        </div>
+        <div class="controles">
+            <div class="controll-container">
+                <h3>Datos Facturaci&oacute;n
+                    <div class="tooltip">
+                        <i class="fa-solid fa-circle-question"></i>
+                        <span class="tooltiptext">Fechas hist&oacute;ricas que se consideran para calcular los pron&oacute;sticos</span>
+                    </div>
+                </h3>
+                <div>
+                    <label for="fecha_inicio_a">Fecha inicio</label><input type="date" id="fecha_inicio_a">
+                    <label for="fecha_fin_a">Fecha fin</label><input type="date" id="fecha_fin_a">
+                </div>                      
+                <h3>Datos Pron&oacute;stico
+                    <div class="tooltip">
+                        <i class="fa-solid fa-circle-question"></i>
+                        <span class="tooltiptext">Fechas de las que se obtendr&aacute;n los pron&oacute;sticos</span>
+                    </div>
+                </h3>
+                <div>
+                    <label for="fecha_inicio">Fecha inicio</label><input type="date" id="fecha_inicio">
+                    <label for="fecha_fin">Fecha fin</label><input type="date" id="fecha_fin">
+                </div>                                 
+            </div>            
+            <div class="controll-container">
+                <label>Producto</label>
+                <div class="select-container">
+                    <div class="select-field" id="product-select"></div>
+                </div>
+                <label>Cliente</label>
+                <div class="select-container">
+                    <div class="select-field" id="customer-select"></div>
+                </div>
+            </div>     
+            <div class="controll-container">
+                <div class=""><label for="tasa">% de Crecimiento</label><input class="inputs-ex" type="number" id="tasa"></div>
+                <div class=""><label for="desperdicio">% de Desperdicio</label><input class="inputs-ex" type="number" id="desperdicio"></div>
+                <div class=""><label for="vida_producto">
+                    Vida del producto
+                    <div class="tooltip">
+                        <i class="fa-solid fa-circle-question"></i>
+                        <span class="tooltiptext">Por definir.</span>
+                    </div>
+                </label><input class="inputs-ex" type="number" id="vida_producto"></div>
+                <div id="sust_input_container"></div>
+                <span class="filter-button" onclick="filtrar()">Aceptar <i class="fa-solid fa-circle-arrow-right"></i></span>                                  
+            </div>            
+        </div>
     </div>
     <div class="resultados">
-        <div id="tabla"></div>
-    </div>    
+        <div class="table-container" id="tabla"></div>
+        <div class="table-container" id="tabla-resumen"></div>
+    </div>
 </body>
 </html>

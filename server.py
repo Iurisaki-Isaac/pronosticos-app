@@ -24,16 +24,19 @@ class Serv(BaseHTTPRequestHandler):
                 self.end_headers()
 
                 content_len = int(self.headers.get('Content-Length'))
-                post_body = self.rfile.read(content_len)            
-                response = processing.filt(json.loads(post_body))          
-                self.wfile.write(bytes(response,'utf-8'))
+                post_body = json.loads(self.rfile.read(content_len))
+                response, summary =  processing.filt(post_body)            
+                data = '{"response" :'+ response +', "summary":'+ summary+'}'           
+                self.wfile.write(bytes(data,'utf-8'))
 
             if self.path.endswith("/obtener-clientes"):
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
-                
-                response = processing.customers()
+
+                content_len = int(self.headers.get('Content-Length'))
+                post_body = json.loads(self.rfile.read(content_len))
+                response = processing.customers(post_body)
                 self.wfile.write(bytes(response,'utf-8'))
 
             if self.path.endswith("/obtener-productos"):
@@ -41,7 +44,9 @@ class Serv(BaseHTTPRequestHandler):
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
                 
-                response = processing.products()
+                content_len = int(self.headers.get('Content-Length'))
+                post_body = json.loads(self.rfile.read(content_len))
+                response = processing.products(post_body)
                 self.wfile.write(bytes(response,'utf-8'))
         except IOError:
             self.send_error(404,"File not found")
