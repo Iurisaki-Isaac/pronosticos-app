@@ -1,5 +1,6 @@
 var selected_products = new Array();
 var selected_customers = new Array();
+var selected_sus_product = ""
 
 obtenerClientes({})
 obtenerProductos({})
@@ -122,11 +123,12 @@ function renderList(data,element_id,id){
 }
 
 function updateList(list){
-    if(list == 'product'){
+    if(list == 'product'){        
         selected_customers = getSelectedValues("customer")
         obtenerClientes({'producto' : getSelectedValues("product")})
     }
     if(list == 'customer'){
+        selected_sus_product = document.getElementById("sustitucion").value
         selected_products = getSelectedValues("product")
         obtenerProductos({'cliente' : getSelectedValues("customer")})
     }
@@ -147,7 +149,9 @@ function renderSustList(data){
     })
     list = list + `</select>`
     render.innerHTML = list
-    document.getElementById("sustitucion").selectedIndex = -1;
+    if(selected_sus_product != "") document.getElementById("sustitucion").value = selected_sus_product
+    else document.getElementById("sustitucion").selectedIndex = -1;
+ 
 
     $(`#sustitucion`).select2({
         allowClear: true,
