@@ -16,16 +16,17 @@ class Serv(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(bytes(file_to_open, 'utf-8'))
     
-    def do_POST(self):
+    def do_POST(self):        
         try:
             if self.path.endswith("/filtrar"):
+                print("ENTRO")
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
 
                 content_len = int(self.headers.get('Content-Length'))
                 post_body = json.loads(self.rfile.read(content_len))
-                response, summary =  processing.filt(post_body)            
+                response, summary =  processing.filt(post_body)
                 data = '{"response" :'+ response +', "summary":'+ summary+'}'           
                 self.wfile.write(bytes(data,'utf-8'))
 
@@ -50,6 +51,7 @@ class Serv(BaseHTTPRequestHandler):
                 self.wfile.write(bytes(response,'utf-8'))
         except IOError:
             self.send_error(404,"File not found")
+            print("PATH",self.path)
 
 
 
