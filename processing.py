@@ -150,8 +150,7 @@ def tablaTemporalCerrado(df,params):
                     else:
                         results_df.append([cliente,producto,mes,semana,sum(df_mspc['Cantidad Total'])/len(df_mspc)])
                     
-    results_df = pd.DataFrame(results_df)
-    print(results_df)
+    results_df = pd.DataFrame(results_df)    
     
     out_df = []
     for date in weekDates(params['fecha_inicio'], params['fecha_fin']):
