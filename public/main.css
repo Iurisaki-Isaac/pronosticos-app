@@ -283,3 +283,12 @@ th{
   position: relative;
   left: 8%;
 }
+
+.header-tr th{
+  background-color: gray;
+}
+
+.controll-container .select-modo{
+  width: 50%;
+  margin-right: 9%;
+}

@@ -22,7 +22,7 @@
             <h2>Pron&oacute;sticos Eltec</h2>
         </div>
         <div class="controles">
-            <div class="controll-container">
+            <div class="controll-container">                
                 <h3>Datos Facturaci&oacute;n
                     <div class="tooltip">
                         <i class="fa-solid fa-circle-question"></i>
@@ -42,7 +42,15 @@
                 <div>
                     <label for="fecha_inicio">Fecha inicio</label><input type="date" id="fecha_inicio">
                     <label for="fecha_fin">Fecha fin</label><input type="date" id="fecha_fin">
-                </div>                                 
+                </div>
+                <div>
+                    <label for="modo_pronostico">Modo de pron&oacute;stico</label>
+                    <select class="select-modo" name="modo_pronostico" id="modo_pronostico">
+                        <option value="simple">Simple</option>
+                        <option value="temporal_c">Temporalidad cerrada</option>
+                        <option value="temporal_a">Temporalidad abierta</option>
+                    </select>
+                </div>               
             </div>            
             <div class="controll-container">
                 <label>Producto</label>

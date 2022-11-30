@@ -48,6 +48,7 @@ function filtrar(){
         "fecha_fin": document.getElementById("fecha_fin").value,
         "fecha_inicio_a": document.getElementById("fecha_inicio_a").value,
         "fecha_fin_a": document.getElementById("fecha_fin_a").value,
+        "modo_pronostico": document.getElementById("modo_pronostico").value,
         "cliente": getSelectedValues("customer"),
         "producto": getSelectedValues("product"),
         "tasa": document.getElementById("tasa").value,
@@ -161,6 +162,7 @@ function renderSustList(data){
 }
 
 function renderTable(data){
+    let formatter = Intl.NumberFormat('en-US')
     let render = document.getElementById("tabla")
     let table = `<table>
     <tr>
@@ -176,7 +178,7 @@ function renderTable(data){
             <td>${element["Fecha Semana"]}</td>        
             <td>${element["Nombre"]}</td>
             <td>${element["Producto"]}</td>
-            <td>${element['Cantidad Pronostico']}</td>
+            <td>${formatter.format(element['Cantidad Pronostico'])}</td>
         </tr>`
     });
 
@@ -185,9 +187,10 @@ function renderTable(data){
 }
 
 function renderSummaryTable(data){
+    let formatter = Intl.NumberFormat('en-US')
     let render = document.getElementById("tabla-resumen")
     let table = `<table><tr><th colspan="3">Resumen</th></tr>
-    <tr>
+    <tr class="header-tr">
       <th>Producto</th>
       <th>Promedio semanal pronosticado</th>
       <th>Total pronosticado</th>
@@ -197,8 +200,8 @@ function renderSummaryTable(data){
         table = table + 
         `<tr>
             <td>${element["Producto"]}</td>        
-            <td>${element["Promedio semana"]}</td>
-            <td>${element["Total"]}</td>        
+            <td>${formatter.format(element["Promedio semana"])}</td>
+            <td>${formatter.format(element["Total"])}</td>        
         </tr>`
     });
 
