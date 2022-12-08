@@ -15,8 +15,7 @@ function obtenerClientes(data){
     xhr.onreadystatechange = function() {
         if (this.readyState != 4) return;
         if (this.status == 200) {
-            let data = JSON.parse(this.responseText)
-            //localStorage.setItem('clientes',data); //no se esta usando
+            let data = JSON.parse(this.responseText)            
             renderList(data,"customer-select","customer")
             return;            
         }
@@ -32,8 +31,7 @@ function obtenerProductos(data){
     xhr.onreadystatechange = function() {
         if (this.readyState != 4) return;
         if (this.status == 200) {
-            let data = JSON.parse(this.responseText)
-            //localStorage.setItem('productos',data); //no se esta usando
+            let data = JSON.parse(this.responseText)            
             renderList(data,"product-select","product")
             renderSustList(data)
             return;            
@@ -43,15 +41,14 @@ function obtenerProductos(data){
 
 function filtrar(){
     document.getElementById('lds-spinner').style.display = 'inline-block';
-    document.getElementById('tabla').style.display = 'none';
+    document.getElementById('tabla').innerHTML = '';
     document.getElementById('tabla-resumen').style.display = 'none';
     let xhr = new XMLHttpRequest();
     let data = {
         "fecha_inicio": document.getElementById("fecha_inicio").value,
         "fecha_fin": document.getElementById("fecha_fin").value,
         "fecha_inicio_a": document.getElementById("fecha_inicio_a").value,
-        "fecha_fin_a": document.getElementById("fecha_fin_a").value,
-        "modo_pronostico": document.getElementById("modo_pronostico").value,
+        "fecha_fin_a": document.getElementById("fecha_fin_a").value,        
         "cliente": getSelectedValues("customer"),
         "producto": getSelectedValues("product"),
         "tasa": document.getElementById("tasa").value,
@@ -65,15 +62,16 @@ function filtrar(){
         xhr.send(JSON.stringify(data));
         xhr.onreadystatechange = function() {
             if(this.readyState != 4) return;
-            if(this.status == 200){
-                document.getElementById('lds-spinner').style.display = 'none';
-                document.getElementById('tabla').style.display = '';
+            if(this.status == 200){                
+                let data = JSON.parse(this.responseText)
+                document.getElementById('lds-spinner').style.display = 'none';                
                 document.getElementById('tabla-resumen').style.display = '';
-                let data = JSON.parse(this.responseText)      
-                if(data.response.length > 0){
-                    renderTable(data.response)
-                    renderSummaryTable(data.summary)
-                }
+                
+                localStorage.setItem('Promedio Simple',JSON.stringify(data.simple));
+                localStorage.setItem('Temporalidad cerrada',JSON.stringify(data.temporal_c));
+                localStorage.setItem('Temporalidad abierta',JSON.stringify(data.temporal_a));
+                localStorage.setItem('Temporalidad abierta con peso',JSON.stringify(data.temporal_a2));
+                if(data.summary.length > 0) renderSummaryTable(data.summary)
                 else renderNoResults()             
             }
         }
@@ -167,16 +165,20 @@ function renderSustList(data){
     });
 }
 
-function renderTable(data){
+function renderTable(producto, modo_pronostico){
+    let data = localStorage.getItem(modo_pronostico)      
     let formatter = Intl.NumberFormat('en-US')
     let render = document.getElementById("tabla")
-    let table = `<table>
-    <tr>
+    let table = `<table><tr><th colspan="5">${producto}:${modo_pronostico}</th></tr>
+    <tr class="header-tr">
       <th>Fecha Semana</th>
       <th>Cliente</th>
       <th>Producto</th>
       <th>Cantidad</th>
     </tr>`
+
+    data = JSON.parse(data)
+    data = data.filter(obj=> obj.Producto == producto);
 
     data.forEach(element => {        
         table = table + 
@@ -195,19 +197,23 @@ function renderTable(data){
 function renderSummaryTable(data){
     let formatter = Intl.NumberFormat('en-US')
     let render = document.getElementById("tabla-resumen")
-    let table = `<table><tr><th colspan="3">Resumen</th></tr>
+    let table = `<table><tr><th colspan="5">Resumen</th></tr>
     <tr class="header-tr">
+      <th colspan="2">Tecnica</th>
       <th>Producto</th>
       <th>Promedio semanal pronosticado</th>
       <th>Total pronosticado</th>
     </tr>`
 
+    data = data.sort((a, b) => a.Producto.localeCompare(b.Producto))
     data.forEach(element => {        
         table = table + 
         `<tr>
-            <td>${element["Producto"]}</td>        
+            <td><i class="look-table fa-solid fa-eye" onclick="renderTable('${element["Producto"]}','${element["Tecnica"]}')"></i></td>
+            <td>${element["Tecnica"]}</td>
+            <td>${element["Producto"]}</td>
             <td>${formatter.format(element["Promedio semana"])}</td>
-            <td>${formatter.format(element["Total"])}</td>        
+            <td>${formatter.format(element["Total"])}</td>                 
         </tr>`
     });
 

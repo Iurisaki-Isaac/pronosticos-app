@@ -25,8 +25,13 @@ class Serv(BaseHTTPRequestHandler):
 
                 content_len = int(self.headers.get('Content-Length'))
                 post_body = json.loads(self.rfile.read(content_len))
-                response, summary =  processing.filt(post_body)
-                data = '{"response" :'+ response +', "summary":'+ summary+'}'           
+                response, summary =  processing.filt(post_body,"simple")
+                response2, summary2 =  processing.filt(post_body,"temporal_c")
+                response3, summary3 =  processing.filt(post_body,"temporal_a")
+                response4, summary4 =  processing.filt(post_body,"temporal_a2")
+                
+                general_summary = '['+summary[1:-1]+','+summary2[1:-1]+','+summary3[1:-1]+','+summary4[1:-1]+']'
+                data = '{"summary" :'+ general_summary +', "simple":'+ response+', "temporal_c":'+response2+', "temporal_a":'+response3+', "temporal_a2":'+response4+'}'                
                 self.wfile.write(bytes(data,'utf-8'))
 
             if self.path.endswith("/obtener-clientes"):

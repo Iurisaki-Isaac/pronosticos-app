@@ -4,6 +4,8 @@ from math import floor, ceil, log10
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta
 
+pd.options.mode.chained_assignment = None
+
 df = pd.read_csv('data_procesada.csv', encoding='latin1')[['Fecha Semana','Cantidad Total', 'Cliente','Nombre','Producto','Mes','Semana']]
 
 default_params = {
@@ -19,10 +21,7 @@ default_params = {
     "desperdicio": 0
     }
 
-params2 = {'fecha_inicio': '2022-12-07', 'fecha_fin': '2023-07-31', 'fecha_inicio_a': '2021-12-06', 'fecha_fin_a': '2022-12-06', 'modo_pronostico': 'temporal_a', 'cliente': [], 'producto': ['EI-S4TA'], 'tasa': 
-'', 'desperdicio': '', 'sustitucion': ''}
-
-def filt(params):
+def filt(params,modo_pronostico):
     print(params)
     temp = df
     #filtrado por cliente y producto (tomando en cuenta sustitución si es que la hay)
@@ -54,16 +53,16 @@ def filt(params):
         return "[]","[]"
     
     #tabla pronostico simple
-    if params["modo_pronostico"] == "simple":
+    if modo_pronostico == "simple":
         out_df = tablaPromedioSimple(temp2,params)
         
     #tabla pronostico temporal cerrado
-    if params["modo_pronostico"] == "temporal_c":
+    if modo_pronostico == "temporal_c":
         out_df = tablaTemporalCerrado(temp2,params)
         
     #tabla pronostico temporal abierto
-    if params["modo_pronostico"] == "temporal_a" or params["modo_pronostico"] == "temporal_a2":
-        out_df = tablaTemporalAbierto(temp,temp2,params)
+    if modo_pronostico == "temporal_a" or modo_pronostico == "temporal_a2":
+        out_df = tablaTemporalAbierto(temp,temp2,params,modo_pronostico)
     
     #nombres de columnas
     if out_df.empty:
@@ -72,15 +71,24 @@ def filt(params):
         out_df.columns = ['Fecha Semana','Nombre','Producto','Cantidad Pronostico']
     
     # TABLA RESUMEN-----------------------#
+    if modo_pronostico == "simple":
+        tecnica = "Promedio Simple"
+    elif modo_pronostico == "temporal_c":
+        tecnica = "Temporalidad cerrada"
+    elif modo_pronostico == "temporal_a":
+        tecnica = "Temporalidad abierta"
+    elif modo_pronostico == "temporal_a2":
+        tecnica = "Temporalidad abierta con peso"
+    
     resumen_df = []
     for producto in out_df['Producto'].unique():
         total = sum(out_df[out_df['Producto'] == producto]['Cantidad Pronostico'])
         promedio_semana = total / len(weekDates(params['fecha_inicio'],params['fecha_fin']))        
         fi = params['fecha_inicio']
         ff = params['fecha_fin']
-        resumen_df.append([producto,fi,ff,ceil(promedio_semana),total])
+        resumen_df.append([tecnica, producto, fi, ff, ceil(promedio_semana), total])
     resumen_df = pd.DataFrame(resumen_df)
-    resumen_df.columns = ['Producto','Fecha inicio','Fecha fin','Promedio semana','Total']
+    resumen_df.columns = ['Tecnica','Producto','Fecha inicio','Fecha fin','Promedio semana','Total']
     #-------------------------------------#
 
     out_df.to_csv('out.csv', index = False, encoding="latin1")
@@ -284,10 +292,10 @@ def tablaTemporalCerrado(df,params):
     return pd.DataFrame(out_df)
     
     
-def tablaTemporalAbierto(df,df2,params):    
-    if params["modo_pronostico"] == "temporal_a":
+def tablaTemporalAbierto(df, df2, params, modo_pronostico):    
+    if modo_pronostico == "temporal_a":
         dist_table = distAC(params)
-    if params["modo_pronostico"] == "temporal_a2":
+    if modo_pronostico == "temporal_a2":
         dist_table = distAllYears(params)
     
     df_ps = promedioSimpleDF(df2,params)
