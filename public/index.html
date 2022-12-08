@@ -42,16 +42,7 @@
                 <div>
                     <label for="fecha_inicio">Fecha inicio</label><input type="date" id="fecha_inicio">
                     <label for="fecha_fin">Fecha fin</label><input type="date" id="fecha_fin">
-                </div>
-                <div>
-                    <label for="modo_pronostico">Modo de pron&oacute;stico</label>
-                    <select class="select-modo" name="modo_pronostico" id="modo_pronostico">
-                        <option value="simple">Simple</option>
-                        <option value="temporal_c">Temporalidad cerrada</option>
-                        <option value="temporal_a">Temporalidad abierta</option>
-                        <option value="temporal_a2">Temporalidad abierta con peso</option>
-                    </select>
-                </div>               
+                </div>            
             </div>            
             <div class="controll-container">
                 <label>Producto</label>
@@ -79,9 +70,9 @@
         </div>
     </div>
     <div class="resultados">
-        <div id="lds-spinner" class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
-        <div class="table-container" id="tabla"></div>
-        <div class="table-container" id="tabla-resumen"></div>
+        <div id="lds-spinner" class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>        
+        <div class="table-container tabla-resumen" id="tabla-resumen"></div>
+        <div class="table-container tabla-desglose" id="tabla"></div>
     </div>    
 </body>
 </html>

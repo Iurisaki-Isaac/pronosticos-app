@@ -9,6 +9,7 @@ html, body{
 .header{
   position: fixed;
   width: 100%;
+  z-index: 1;
 }
 
 .title-div{
@@ -43,6 +44,11 @@ th{
   background-color: black;
   color: white;
   font-weight: bold;
+}
+
+.look-table:hover{
+  color: gray;
+  cursor: pointer;
 }
 
 .controles{
@@ -126,7 +132,7 @@ th{
 
 .resultados{
   padding: 1%;
-  z-index: -1;
+  z-index: 0;
   position: relative;
   top: 36%;
 }
@@ -265,11 +271,13 @@ th{
   color: #fff;
 }
 
-#tabla{
-  width: 64%;
+.tabla-desglose{
+  width: 60%;
+  right: 0;
+  position: absolute;
 }
 
-#tabla-resumen{
+.tabla-resumen{
   width: 34%;
 }
 
