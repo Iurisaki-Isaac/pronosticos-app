@@ -1,23 +1,26 @@
 import pandas as pd
 from json import dumps
-from math import floor, ceil
+from math import floor, ceil, log10
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta
 
 df = pd.read_csv('data_procesada.csv', encoding='latin1')[['Fecha Semana','Cantidad Total', 'Cliente','Nombre','Producto','Mes','Semana']]
 
 default_params = {
-    "fecha_fin": '2023-08-31',
-    "fecha_inicio": '2022-11-18',
-    "fecha_fin_a": '2022-11-18',
-    "fecha_inicio_a": '2021-11-18',
+    "fecha_fin": '2023-07-31',
+    "fecha_inicio": '2022-12-07',
+    "fecha_fin_a": '2022-12-06',
+    "fecha_inicio_a": '2021-12-06',
     "producto": ["EI-S4TA"],
-    "cliente": ["INDUSTRIAS ACROS WHIRLPOOL S. DE R.L. DE C.V."],
+    "cliente": [],
     "modo_pronostico": "temporal_a",
     "sustitucion": '',
     "tasa": 0,
     "desperdicio": 0
     }
+
+params2 = {'fecha_inicio': '2022-12-07', 'fecha_fin': '2023-07-31', 'fecha_inicio_a': '2021-12-06', 'fecha_fin_a': '2022-12-06', 'modo_pronostico': 'temporal_a', 'cliente': [], 'producto': ['EI-S4TA'], 'tasa': 
+'', 'desperdicio': '', 'sustitucion': ''}
 
 def filt(params):
     print(params)
@@ -59,7 +62,7 @@ def filt(params):
         out_df = tablaTemporalCerrado(temp2,params)
         
     #tabla pronostico temporal abierto
-    if params["modo_pronostico"] == "temporal_a":
+    if params["modo_pronostico"] == "temporal_a" or params["modo_pronostico"] == "temporal_a2":
         out_df = tablaTemporalAbierto(temp,temp2,params)
     
     #nombres de columnas
@@ -82,6 +85,7 @@ def filt(params):
 
     out_df.to_csv('out.csv', index = False, encoding="latin1")
     resumen_df.to_csv('resumen.csv', index = False, encoding="latin1")
+    print("FINALIZADO")
     return out_df.to_json(orient= 'records'),resumen_df.to_json(orient = 'records')
 
 
@@ -107,7 +111,7 @@ def weekDates(i_date,e_date):
     return [date for date in pd.date_range(i_date,e_date) if date.day in [1,9,16,24]]
 
 def getMonthAndDay(fecha):
-    return fecha[5:7], fecha[8:10]
+    return int(fecha[5:7]), int(fecha[8:10])
 
 def promedioSimpleDF(df,params):
     df_ps = []
@@ -123,6 +127,118 @@ def promedioSimpleDF(df,params):
     df_ps = pd.DataFrame(df_ps)
     df_ps.columns = ['Producto','Cliente','Promedio','Promedio Simple','Promedio Simple IU']
     return df_ps
+
+def distAC(params):
+    df2 = pd.read_csv('data_procesada2.csv',encoding='latin1')
+    df2["Semana"], df2["Año"] = noSemanaYAno(df2['Fecha Semana'].values)
+    e_year = dt.now()
+    i_year = dt.now() - relativedelta(years=1)
+    e_year = e_year.strftime("%Y-%m-%d")
+    i_year = i_year.strftime("%Y-%m-%d")   
+    lastyear_df = df2[(df2['Fecha Semana'] <= e_year) & (df2['Fecha Semana'] >= i_year)]        
+    dist_table = []
+    
+    for producto in params["producto"]:
+        for cliente in lastyear_df[lastyear_df["Producto"] == producto]['Nombre'].unique():
+            temp = lastyear_df[(lastyear_df["Producto"] == producto) & (lastyear_df["Nombre"] == cliente)]
+            for s in range(1,49):
+                mes = ceil(s/4)
+                dia = getDia(s, mes)
+                if s in temp["Semana"].values:
+                    cantidad = temp[temp["Semana"] == s]['Cantidad Total'].values[0]
+                    porcentaje = cantidad / sum(temp['Cantidad Total'])
+                else:
+                    porcentaje = 0
+                dist_table.append([producto, cliente, porcentaje, mes, dia ])
+    
+    dist_table = pd.DataFrame(dist_table)
+    dist_table.columns = ['Producto','Cliente','Porcentaje','Mes','Dia']    
+    return dist_table
+
+def noSemanaYAno(fechas):
+    semanas = []
+    anos = []
+    for fecha in fechas:
+        if fecha[-2:] == '01':
+            semana = 1 + ((int(fecha[5:7])*4)-4)
+            semanas.append(semana)
+        if fecha[-2:] == '09':
+            semana = 2 + ((int(fecha[5:7])*4)-4)
+            semanas.append(semana)
+        if fecha[-2:] == '16':
+            semana = 3 + ((int(fecha[5:7])*4)-4)
+            semanas.append(semana)
+        if fecha[-2:] == '24':
+            semana = 4 + ((int(fecha[5:7])*4)-4)
+            semanas.append(semana)
+        anos.append(int(fecha[0:4]))
+    return semanas, anos
+    
+def distAllYears(params):    
+    df2 = pd.read_csv('data_procesada2.csv',encoding='latin1')
+    df2["Semana"], df2["Año"] = noSemanaYAno(df2['Fecha Semana'].values)
+
+    dist_table = []
+    for producto in params["producto"]:            
+        for cliente in df2[df2['Producto'] == producto]['Nombre'].unique():
+            temp = df2[(df2['Nombre'] == cliente) & (df2['Producto'] == producto)]                 
+            if not temp.empty:                
+                #obtenemos importancia
+                temp["Importancia"] = [1-log10(1 + abs(a - max(temp["Año"].values))) for a in temp["Año"].values]
+            
+                #repeticiones R
+                temp["R"] = [int(i*10) for i in temp["Importancia"].values]
+            
+                #obteniendo distribucion anual
+                distribucion = []
+                for a in temp["Año"].unique():
+                    temp_a = temp[temp["Año"] == a]
+                    for s in temp_a["Semana"].unique():
+                        cantidad = temp_a[temp_a["Semana"] == s]['Cantidad Total'].values[0]
+                        if sum(temp_a["Cantidad Total"].values) != 0:
+                            dist = (cantidad * 100) / sum(temp_a["Cantidad Total"].values)
+                        else:
+                            dist = 0
+                        distribucion.append(dist)
+
+                temp["Distribucion Anual"] = distribucion
+                     
+                #obteniendo R*D   
+                temp["R*D"] = temp["R"] * temp["Distribucion Anual"]
+            
+                # distribucion con peso
+                dist_p = []
+                for s in temp["Semana"].unique():
+                    temp_s = temp[temp["Semana"] == s]
+                    dist_calc = sum(temp_s["R*D"].values) / sum(temp_s["R"].values)
+                    dist_p.append([s,dist_calc])
+                    
+                dist_p = pd.DataFrame(dist_p)
+                dist_p.columns = ["Semana","Distribucion"]
+                dist_p = dist_p.sort_values("Semana")                
+                dist_p["Porcentaje"] = [v/sum(dist_p["Distribucion"].values) for v in dist_p["Distribucion"].values]                
+                
+                for s in dist_p["Semana"].values:
+                    mes = ceil(s/4)
+                    dia = getDia(s,mes)
+                    porcentaje = dist_p[dist_p["Semana"] == s]["Porcentaje"].values[0]
+                    dist_table.append([producto, cliente, porcentaje, mes, dia])
+            
+    dist_table = pd.DataFrame(dist_table)
+    dist_table.columns = ['Producto','Cliente','Porcentaje','Mes','Dia']
+    return dist_table
+
+def getDia(v,mes):
+    x = (mes-1)*4
+    y = (v-x)
+    if y == 1:
+        return 1
+    if y == 2:
+        return 9
+    if y == 3:
+        return 16
+    if y == 4:
+        return 24
 
 def tablaPromedioSimple(df,params):
     df_ps= promedioSimpleDF(df,params)
@@ -168,37 +284,21 @@ def tablaTemporalCerrado(df,params):
     return pd.DataFrame(out_df)
     
     
-def tablaTemporalAbierto(df,df2,params):
-    e_year = dt.now()
-    i_year = dt.now() - relativedelta(years=1)
-    e_year = e_year.strftime("%Y-%m-%d")
-    i_year = i_year.strftime("%Y-%m-%d")
-    lastyear_df = df[(df['Fecha Semana'] < e_year) & (df['Fecha Semana'] > i_year)]
-    total_ventas = sum(lastyear_df["Cantidad Total"])
-    week_dates = [fecha.strftime("%Y-%m-%d") for fecha in weekDates(i_year, e_year)]
+def tablaTemporalAbierto(df,df2,params):    
+    if params["modo_pronostico"] == "temporal_a":
+        dist_table = distAC(params)
+    if params["modo_pronostico"] == "temporal_a2":
+        dist_table = distAllYears(params)
     
-    dist_table = []
-    for fecha in week_dates:
-        for producto in lastyear_df['Producto'].unique():
-            for cliente in lastyear_df['Nombre'].unique():
-                if fecha in lastyear_df['Fecha Semana'].unique():            
-                    porcentaje = lastyear_df[lastyear_df["Fecha Semana"] == fecha]["Cantidad Total"].unique()[0] / total_ventas            
-                else:
-                    porcentaje = 0
-                mes, dia = getMonthAndDay(fecha)
-                dist_table.append([fecha, producto, cliente, porcentaje, mes, dia])
-    
-    dist_table = pd.DataFrame(dist_table)
-    dist_table.columns = ['Fecha Semana','Producto','Cliente','Porcentaje','Mes','Dia']    
-    df_ps = promedioSimpleDF(df2,params)    
+    df_ps = promedioSimpleDF(df2,params)
     
     out_df = []
     for fecha in weekDates(params['fecha_inicio'],params['fecha_fin']):
         for producto in df2['Producto'].unique():
             df2_p = df2[df2['Producto'] == producto]
-            for cliente in df2_p['Nombre'].unique():
+            for cliente in df2_p['Nombre'].unique():                
                 #tomo el promedio simple del input del usuario
-                mes, dia = getMonthAndDay(fecha.strftime("%Y-%m-%d"))
+                mes, dia = getMonthAndDay(fecha.strftime("%Y-%m-%d"))                
                 promedio = df_ps[(df_ps['Cliente'] == cliente) & (df_ps['Producto'] == producto)]['Promedio Simple IU'].unique()[0]
                 total_extrapolado = promedio * 48
                 porcentaje = dist_table[(dist_table['Producto'] == producto) & (dist_table['Cliente'] == cliente) & (dist_table['Mes'] == mes) & (dist_table['Dia'] == dia)]['Porcentaje'].unique()[0]                

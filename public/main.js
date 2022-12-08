@@ -42,6 +42,9 @@ function obtenerProductos(data){
 }
 
 function filtrar(){
+    document.getElementById('lds-spinner').style.display = 'inline-block';
+    document.getElementById('tabla').style.display = 'none';
+    document.getElementById('tabla-resumen').style.display = 'none';
     let xhr = new XMLHttpRequest();
     let data = {
         "fecha_inicio": document.getElementById("fecha_inicio").value,
@@ -63,6 +66,9 @@ function filtrar(){
         xhr.onreadystatechange = function() {
             if(this.readyState != 4) return;
             if(this.status == 200){
+                document.getElementById('lds-spinner').style.display = 'none';
+                document.getElementById('tabla').style.display = '';
+                document.getElementById('tabla-resumen').style.display = '';
                 let data = JSON.parse(this.responseText)      
                 if(data.response.length > 0){
                     renderTable(data.response)
