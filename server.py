@@ -29,9 +29,11 @@ class Serv(BaseHTTPRequestHandler):
                 response2, summary2 =  processing.filt(post_body,"temporal_c")
                 response3, summary3 =  processing.filt(post_body,"temporal_a")
                 response4, summary4 =  processing.filt(post_body,"temporal_a2")
+                response5, summary5 =  processing.filt(post_body,"croston")
+                response6, summary6 =  processing.filt(post_body,"croston_tsb")
                 
-                general_summary = '['+summary[1:-1]+','+summary2[1:-1]+','+summary3[1:-1]+','+summary4[1:-1]+']'
-                data = '{"summary" :'+ general_summary +', "simple":'+ response+', "temporal_c":'+response2+', "temporal_a":'+response3+', "temporal_a2":'+response4+'}'                
+                general_summary = '['+summary[1:-1]+','+summary2[1:-1]+','+summary3[1:-1]+','+summary4[1:-1]+','+summary5[1:-1]+','+summary6[1:-1]+']'
+                data = '{"summary" :'+ general_summary +', "simple":'+ response+', "temporal_c":'+response2+', "temporal_a":'+response3+', "temporal_a2":'+response4+', "croston":'+response5+', "croston_tsb":'+response6+'}'                
                 self.wfile.write(bytes(data,'utf-8'))
 
             if self.path.endswith("/obtener-clientes"):

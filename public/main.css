@@ -22,7 +22,7 @@ html, body{
   color:#fff;
 }
 
-table{
+table{  
   border-collapse: collapse;
   border-radius: 1em;
   overflow: hidden;
@@ -140,6 +140,10 @@ th{
 .table-container{
   display: inline-block;
   vertical-align: top;
+}
+
+.tabla-desglose table{
+  width: 95%;
 }
 
 .controll-container{
@@ -292,9 +296,11 @@ th{
   left: 8%;
 }
 
-.header-tr th{
+.header-tr th, .header-tr td{
   background-color: gray;
 }
+
+
 
 .controll-container .select-modo{
   width: 50%;

@@ -206,7 +206,14 @@ function renderSummaryTable(data){
     </tr>`
 
     data = data.sort((a, b) => a.Producto.localeCompare(b.Producto))
-    data.forEach(element => {        
+    let producto_pasado = data[0]["Producto"]
+    console.log(producto_pasado)
+    data.forEach(element => {
+        if(element["Producto"] != producto_pasado){
+            console.log("entra")
+            table = table + `<tr class="header-tr"><td colspan="5"></td></tr>`            
+        }
+        producto_pasado = element["Producto"]
         table = table + 
         `<tr>
             <td><i class="look-table fa-solid fa-eye" onclick="renderTable('${element["Producto"]}','${element["Tecnica"]}')"></i></td>
