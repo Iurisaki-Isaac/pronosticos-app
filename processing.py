@@ -313,20 +313,21 @@ def Croston_TSB(ts,extra_periods=1,alpha=0.4,beta=0.4):
     df = pd.DataFrame.from_dict({"Demand":d,"Forecast":f,"Period":p,"Level":a,"Error":d-f})
     return df
 
-def tablaCroston(params, modo_pronostico):
+def tablaCroston(products_with_data ,params, modo_pronostico):
     df2 = pd.read_csv('data_procesada2.csv',encoding='latin1')
     if len(params["cliente"]) > 0:
         df2= df2[df2['Nombre'].isin(params['cliente'])]
     df2 = df2[df2["Producto"].isin(params['producto'])]
     out_df2 = []
-    for producto in df2['Producto'].unique():    
+    for producto in products_with_data:    
         temp = df2[df2['Producto'] == producto]
         for cliente in temp['Nombre'].unique():
             temp2 = temp[temp['Nombre'] == cliente]
+            temp2 = temp2[(temp2['Fecha Semana'] >= params["fecha_inicio_a"]) & (temp2['Fecha Semana'] <= params['fecha_fin_a'])]            
             ep = len(weekDates(params['fecha_inicio'], params['fecha_fin']))
-            if modo_pronostico == 'croston':
+            if modo_pronostico == 'croston' and len(temp2['Cantidad Total']) > 0:
                 r_croston = Croston(temp2['Cantidad Total'], extra_periods=ep)
-            elif modo_pronostico == 'croston_tsb':
+            elif modo_pronostico == 'croston_tsb' and len(temp2['Cantidad Total']) > 0:
                 r_croston = Croston_TSB(temp2['Cantidad Total'], extra_periods=ep)
             pronostico = r_croston['Forecast'].values[-1]
             for fecha in weekDates(params['fecha_inicio'], params['fecha_fin']):
@@ -334,8 +335,7 @@ def tablaCroston(params, modo_pronostico):
     
     return pd.DataFrame(out_df2)
 
-def filt(params,modo_pronostico):
-    print(params)
+def filt(params,modo_pronostico):    
     temp = df
     #filtrado por cliente y producto (tomando en cuenta sustitución si es que la hay)
     if len(params["cliente"]) > 0:
@@ -347,7 +347,7 @@ def filt(params,modo_pronostico):
             temp['Producto'] = new_col
         else:
             temp= temp[temp['Producto'].isin(params["producto"])]
-    else:
+    else:        
         return "[]","[]"
     
     #tabla de fecha de facturación (análisis)
@@ -379,10 +379,10 @@ def filt(params,modo_pronostico):
         
     #tabla pronostico croston y croston tsb
     if modo_pronostico == "croston" or modo_pronostico == "croston_tsb":
-        out_df = tablaCroston(params, modo_pronostico)
+        out_df = tablaCroston(temp2['Producto'].unique(), params, modo_pronostico)
     
     #nombres de columnas
-    if out_df.empty:
+    if out_df.empty:        
         return out_df.to_json(orient= 'records'), out_df.to_json(orient= 'records')
     else:
         out_df.columns = ['Fecha Semana','Nombre','Producto','Cantidad Pronostico']
@@ -410,9 +410,7 @@ def filt(params,modo_pronostico):
         resumen_df.append([tecnica, producto, fi, ff, ceil(promedio_semana), total])
     resumen_df = pd.DataFrame(resumen_df)
     resumen_df.columns = ['Tecnica','Producto','Fecha inicio','Fecha fin','Promedio semana','Total']
-    #-------------------------------------#
-
-    print("FINALIZADO")
+    #-------------------------------------#        
     return out_df.to_json(orient= 'records'),resumen_df.to_json(orient = 'records')
 
 

@@ -25,15 +25,23 @@ class Serv(BaseHTTPRequestHandler):
 
                 content_len = int(self.headers.get('Content-Length'))
                 post_body = json.loads(self.rfile.read(content_len))
-                response, summary =  processing.filt(post_body,"simple")
+                print(post_body)
+                response, summary1 =  processing.filt(post_body,"simple")
                 response2, summary2 =  processing.filt(post_body,"temporal_c")
                 response3, summary3 =  processing.filt(post_body,"temporal_a")
                 response4, summary4 =  processing.filt(post_body,"temporal_a2")
                 response5, summary5 =  processing.filt(post_body,"croston")
                 response6, summary6 =  processing.filt(post_body,"croston_tsb")
                 
-                general_summary = '['+summary[1:-1]+','+summary2[1:-1]+','+summary3[1:-1]+','+summary4[1:-1]+','+summary5[1:-1]+','+summary6[1:-1]+']'
-                data = '{"summary" :'+ general_summary +', "simple":'+ response+', "temporal_c":'+response2+', "temporal_a":'+response3+', "temporal_a2":'+response4+', "croston":'+response5+', "croston_tsb":'+response6+'}'                
+                general_summary = '['
+                first = True
+                for resumen in [summary1,summary2,summary3,summary4,summary5,summary6]:
+                    general_summary = general_summary + "," if not first and resumen != '[]' else general_summary
+                    general_summary = general_summary + resumen[1:-1] if resumen != '[]' else general_summary
+                    first = False if first == True else first
+                general_summary = general_summary + ']'
+
+                data = '{"summary" :'+ general_summary +', "simple":'+ response+', "temporal_c":'+response2+', "temporal_a":'+response3+', "temporal_a2":'+response4+', "croston":'+response5+', "croston_tsb":'+response6+'}'                                                
                 self.wfile.write(bytes(data,'utf-8'))
 
             if self.path.endswith("/obtener-clientes"):

@@ -62,9 +62,17 @@ function filtrar(){
         xhr.send(JSON.stringify(data));
         xhr.onreadystatechange = function() {
             if(this.readyState != 4) return;
-            if(this.status == 200){                
-                let data = JSON.parse(this.responseText)
-                document.getElementById('lds-spinner').style.display = 'none';                
+            if(this.status == 200){
+                let data = {}
+                try{
+                    data = JSON.parse(this.responseText)
+                }
+                catch(err){
+                    console.log(err)
+                    renderNoResults()
+                    return;
+                }                
+                document.getElementById('lds-spinner').style.display = 'none';              
                 document.getElementById('tabla-resumen').style.display = '';
                 
                 localStorage.setItem('Promedio Simple',JSON.stringify(data.simple));
@@ -72,7 +80,7 @@ function filtrar(){
                 localStorage.setItem('Temporalidad abierta',JSON.stringify(data.temporal_a));
                 localStorage.setItem('Temporalidad abierta con peso',JSON.stringify(data.temporal_a2));
                 if(data.summary.length > 0) renderSummaryTable(data.summary)
-                else renderNoResults()             
+                else renderNoResults()   
             }
         }
     }
@@ -206,11 +214,9 @@ function renderSummaryTable(data){
     </tr>`
 
     data = data.sort((a, b) => a.Producto.localeCompare(b.Producto))
-    let producto_pasado = data[0]["Producto"]
-    console.log(producto_pasado)
+    let producto_pasado = data[0]["Producto"]    
     data.forEach(element => {
-        if(element["Producto"] != producto_pasado){
-            console.log("entra")
+        if(element["Producto"] != producto_pasado){            
             table = table + `<tr class="header-tr"><td colspan="5"></td></tr>`            
         }
         producto_pasado = element["Producto"]
@@ -229,6 +235,7 @@ function renderSummaryTable(data){
 }
 
 function renderNoResults(){
+    document.getElementById('lds-spinner').style.display = 'none';
     let render = document.getElementById("tabla")
     let render_resumen = document.getElementById("tabla-resumen")
     render.innerHTML = `<h2>No hay resultados.</h2>`
