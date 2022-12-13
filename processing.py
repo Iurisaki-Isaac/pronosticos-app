@@ -3,6 +3,7 @@ from json import dumps
 from math import floor, ceil, log10
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta
+import numpy as np
 
 pd.options.mode.chained_assignment = None
 
@@ -14,88 +15,11 @@ default_params = {
     "fecha_fin_a": '2022-12-06',
     "fecha_inicio_a": '2021-12-06',
     "producto": ["EI-S4TA"],
-    "cliente": [],
-    "modo_pronostico": "temporal_a",
+    "cliente": [],    
     "sustitucion": '',
     "tasa": 0,
     "desperdicio": 0
     }
-
-def filt(params,modo_pronostico):
-    print(params)
-    temp = df
-    #filtrado por cliente y producto (tomando en cuenta sustitución si es que la hay)
-    if len(params["cliente"]) > 0:
-        temp= temp[temp['Nombre'].isin(params['cliente'])]
-    if len(params["producto"]) > 0:
-        if params["sustitucion"] != '' and len(params["producto"]) == 1:
-            temp = temp[temp['Producto'].isin([params["producto"][0],params["sustitucion"]])]
-            new_col = [params["producto"][0] for i in range(len(temp))]
-            temp['Producto'] = new_col
-        else:
-            temp= temp[temp['Producto'].isin(params["producto"])]
-    else:
-        return "[]","[]"
-    
-    #tabla de fecha de facturación (análisis)
-    temp2 = temp
-    if params["fecha_fin_a"] != '':
-        temp2 = temp2[temp2['Fecha Semana'] < params['fecha_fin_a']]
-    else:
-        temp2 = temp2[temp2['Fecha Semana'] < default_params['fecha_fin_a']]
-    if params["fecha_inicio_a"] != '':
-        temp2 = temp2[temp2['Fecha Semana'] > params['fecha_inicio_a']]
-    else:
-        temp2 = temp2[temp2['Fecha Semana'] > default_params['fecha_inicio_a']]
-    
-    #revisar si hay datos de facturacion de fechas seleccionadas
-    if temp2.empty:
-        return "[]","[]"
-    
-    #tabla pronostico simple
-    if modo_pronostico == "simple":
-        out_df = tablaPromedioSimple(temp2,params)
-        
-    #tabla pronostico temporal cerrado
-    if modo_pronostico == "temporal_c":
-        out_df = tablaTemporalCerrado(temp2,params)
-        
-    #tabla pronostico temporal abierto
-    if modo_pronostico == "temporal_a" or modo_pronostico == "temporal_a2":
-        out_df = tablaTemporalAbierto(temp,temp2,params,modo_pronostico)
-    
-    #nombres de columnas
-    if out_df.empty:
-        return out_df.to_json(orient= 'records'), out_df.to_json(orient= 'records')
-    else:
-        out_df.columns = ['Fecha Semana','Nombre','Producto','Cantidad Pronostico']
-    
-    # TABLA RESUMEN-----------------------#
-    if modo_pronostico == "simple":
-        tecnica = "Promedio Simple"
-    elif modo_pronostico == "temporal_c":
-        tecnica = "Temporalidad cerrada"
-    elif modo_pronostico == "temporal_a":
-        tecnica = "Temporalidad abierta"
-    elif modo_pronostico == "temporal_a2":
-        tecnica = "Temporalidad abierta con peso"
-    
-    resumen_df = []
-    for producto in out_df['Producto'].unique():
-        total = sum(out_df[out_df['Producto'] == producto]['Cantidad Pronostico'])
-        promedio_semana = total / len(weekDates(params['fecha_inicio'],params['fecha_fin']))        
-        fi = params['fecha_inicio']
-        ff = params['fecha_fin']
-        resumen_df.append([tecnica, producto, fi, ff, ceil(promedio_semana), total])
-    resumen_df = pd.DataFrame(resumen_df)
-    resumen_df.columns = ['Tecnica','Producto','Fecha inicio','Fecha fin','Promedio semana','Total']
-    #-------------------------------------#
-
-    out_df.to_csv('out.csv', index = False, encoding="latin1")
-    resumen_df.to_csv('resumen.csv', index = False, encoding="latin1")
-    print("FINALIZADO")
-    return out_df.to_json(orient= 'records'),resumen_df.to_json(orient = 'records')
-
 
 def products(data):
     if 'cliente' in data:
@@ -136,9 +60,44 @@ def promedioSimpleDF(df,params):
     df_ps.columns = ['Producto','Cliente','Promedio','Promedio Simple','Promedio Simple IU']
     return df_ps
 
+def noSemanaYAno(fechas):
+    semanas = []
+    anos = []
+    for fecha in fechas:
+        if fecha[-2:] == '01':
+            semana = 1 + ((int(fecha[5:7])*4)-4)
+            semanas.append(semana)
+        if fecha[-2:] == '09':
+            semana = 2 + ((int(fecha[5:7])*4)-4)
+            semanas.append(semana)
+        if fecha[-2:] == '16':
+            semana = 3 + ((int(fecha[5:7])*4)-4)
+            semanas.append(semana)
+        if fecha[-2:] == '24':
+            semana = 4 + ((int(fecha[5:7])*4)-4)
+            semanas.append(semana)
+        anos.append(int(fecha[0:4]))
+    return semanas, anos
+
+def getDia(v,mes):
+    x = (mes-1)*4
+    y = (v-x)
+    if y == 1:
+        return 1
+    if y == 2:
+        return 9
+    if y == 3:
+        return 16
+    if y == 4:
+        return 24
+
+
 def distAC(params):
     df2 = pd.read_csv('data_procesada2.csv',encoding='latin1')
     df2["Semana"], df2["Año"] = noSemanaYAno(df2['Fecha Semana'].values)
+    if len(params["cliente"]) > 0:
+        df2= df2[df2['Nombre'].isin(params['cliente'])]
+    df2 = df2[df2["Producto"].isin(params['producto'])]
     e_year = dt.now()
     i_year = dt.now() - relativedelta(years=1)
     e_year = e_year.strftime("%Y-%m-%d")
@@ -163,28 +122,12 @@ def distAC(params):
     dist_table.columns = ['Producto','Cliente','Porcentaje','Mes','Dia']    
     return dist_table
 
-def noSemanaYAno(fechas):
-    semanas = []
-    anos = []
-    for fecha in fechas:
-        if fecha[-2:] == '01':
-            semana = 1 + ((int(fecha[5:7])*4)-4)
-            semanas.append(semana)
-        if fecha[-2:] == '09':
-            semana = 2 + ((int(fecha[5:7])*4)-4)
-            semanas.append(semana)
-        if fecha[-2:] == '16':
-            semana = 3 + ((int(fecha[5:7])*4)-4)
-            semanas.append(semana)
-        if fecha[-2:] == '24':
-            semana = 4 + ((int(fecha[5:7])*4)-4)
-            semanas.append(semana)
-        anos.append(int(fecha[0:4]))
-    return semanas, anos
-    
 def distAllYears(params):    
     df2 = pd.read_csv('data_procesada2.csv',encoding='latin1')
     df2["Semana"], df2["Año"] = noSemanaYAno(df2['Fecha Semana'].values)
+    if len(params["cliente"]) > 0:
+        df2= df2[df2['Nombre'].isin(params['cliente'])]
+    df2 = df2[df2["Producto"].isin(params['producto'])]
 
     dist_table = []
     for producto in params["producto"]:            
@@ -236,21 +179,9 @@ def distAllYears(params):
     dist_table.columns = ['Producto','Cliente','Porcentaje','Mes','Dia']
     return dist_table
 
-def getDia(v,mes):
-    x = (mes-1)*4
-    y = (v-x)
-    if y == 1:
-        return 1
-    if y == 2:
-        return 9
-    if y == 3:
-        return 16
-    if y == 4:
-        return 24
 
 def tablaPromedioSimple(df,params):
-    df_ps= promedioSimpleDF(df,params)
-    #df_ps.to_csv('out2.csv', index = False, encoding = 'latin1')
+    df_ps= promedioSimpleDF(df,params)    
     
     out_df = []
     for date in weekDates(params["fecha_inicio"], params["fecha_fin"]):
@@ -314,7 +245,174 @@ def tablaTemporalAbierto(df, df2, params, modo_pronostico):
                 if pronostico > 0:
                     out_df.append([fecha.strftime("%Y-%m-%d"), cliente, producto, pronostico])
                 
-    #print(dist_table)
-    #print(df_ps)
     return pd.DataFrame(out_df)
+
+def Croston(ts,extra_periods=1,alpha=0.4):
+    d = np.array(ts) # Transform the input into a numpy array
+    cols = len(d) # Historical period length
+    d = np.append(d,[np.nan]*extra_periods) # Append np.nan into the demand array to cover future periods
+    
+    #level (a), periodicity(p) and forecast (f)
+    a,p,f = np.full((3,cols+extra_periods),np.nan)
+    q = 1 #periods since last demand observation
+    
+    # Initialization
+    first_occurence = np.argmax(d[:cols]>0)
+    a[0] = d[first_occurence]
+    p[0] = 1 + first_occurence
+    f[0] = a[0]/p[0]
+# Create all the t+1 forecasts
+    for t in range(0,cols):        
+        if d[t] > 0:
+            a[t+1] = alpha*d[t] + (1-alpha)*a[t] 
+            p[t+1] = alpha*q + (1-alpha)*p[t]
+            f[t+1] = a[t+1]/p[t+1]
+            q = 1           
+        else:
+            a[t+1] = a[t]
+            p[t+1] = p[t]
+            f[t+1] = f[t]
+            q += 1
+       
+    # Future Forecast 
+    a[cols+1:cols+extra_periods] = a[cols]
+    p[cols+1:cols+extra_periods] = p[cols]
+    f[cols+1:cols+extra_periods] = f[cols]
+                      
+    df = pd.DataFrame.from_dict({"Demand":d,"Forecast":f,"Period":p,"Level":a,"Error":d-f})
+    return df
+
+def Croston_TSB(ts,extra_periods=1,alpha=0.4,beta=0.4):
+    d = np.array(ts) # Transform the input into a numpy array
+    cols = len(d) # Historical period length
+    d = np.append(d,[np.nan]*extra_periods) # Append np.nan into the demand array to cover future periods
+    
+    #level (a), probability(p) and forecast (f)
+    a,p,f = np.full((3,cols+extra_periods),np.nan)
+# Initialization
+    first_occurence = np.argmax(d[:cols]>0)
+    a[0] = d[first_occurence]
+    p[0] = 1/(1 + first_occurence)
+    f[0] = p[0]*a[0]
+                 
+    # Create all the t+1 forecasts
+    for t in range(0,cols): 
+        if d[t] > 0:
+            a[t+1] = alpha*d[t] + (1-alpha)*a[t] 
+            p[t+1] = beta*(1) + (1-beta)*p[t]  
+        else:
+            a[t+1] = a[t]
+            p[t+1] = (1-beta)*p[t]       
+        f[t+1] = p[t+1]*a[t+1]
+        
+    # Future Forecast
+    a[cols+1:cols+extra_periods] = a[cols]
+    p[cols+1:cols+extra_periods] = p[cols]
+    f[cols+1:cols+extra_periods] = f[cols]
+                      
+    df = pd.DataFrame.from_dict({"Demand":d,"Forecast":f,"Period":p,"Level":a,"Error":d-f})
+    return df
+
+def tablaCroston(products_with_data ,params, modo_pronostico):
+    df2 = pd.read_csv('data_procesada2.csv',encoding='latin1')
+    if len(params["cliente"]) > 0:
+        df2= df2[df2['Nombre'].isin(params['cliente'])]
+    df2 = df2[df2["Producto"].isin(params['producto'])]
+    out_df2 = []
+    for producto in products_with_data:    
+        temp = df2[df2['Producto'] == producto]
+        for cliente in temp['Nombre'].unique():
+            temp2 = temp[temp['Nombre'] == cliente]
+            temp2 = temp2[(temp2['Fecha Semana'] >= params["fecha_inicio_a"]) & (temp2['Fecha Semana'] <= params['fecha_fin_a'])]            
+            ep = len(weekDates(params['fecha_inicio'], params['fecha_fin']))
+            if modo_pronostico == 'croston' and len(temp2['Cantidad Total']) > 0:
+                r_croston = Croston(temp2['Cantidad Total'], extra_periods=ep)
+            elif modo_pronostico == 'croston_tsb' and len(temp2['Cantidad Total']) > 0:
+                r_croston = Croston_TSB(temp2['Cantidad Total'], extra_periods=ep)
+            pronostico = r_croston['Forecast'].values[-1]
+            for fecha in weekDates(params['fecha_inicio'], params['fecha_fin']):
+                out_df2.append([fecha.strftime("%Y-%m-%d"), cliente, producto, pronostico])   
+    
+    return pd.DataFrame(out_df2)
+
+def filt(params,modo_pronostico):    
+    temp = df
+    #filtrado por cliente y producto (tomando en cuenta sustitución si es que la hay)
+    if len(params["cliente"]) > 0:
+        temp= temp[temp['Nombre'].isin(params['cliente'])]
+    if len(params["producto"]) > 0:
+        if params["sustitucion"] != '' and len(params["producto"]) == 1:
+            temp = temp[temp['Producto'].isin([params["producto"][0],params["sustitucion"]])]
+            new_col = [params["producto"][0] for i in range(len(temp))]
+            temp['Producto'] = new_col
+        else:
+            temp= temp[temp['Producto'].isin(params["producto"])]
+    else:        
+        return "[]","[]"
+    
+    #tabla de fecha de facturación (análisis)
+    temp2 = temp
+    if params["fecha_fin_a"] != '':
+        temp2 = temp2[temp2["Fecha Semana"] < params['fecha_fin_a']]
+    else:
+        temp2 = temp2[temp2["Fecha Semana"] < default_params['fecha_fin_a']]
+    if params["fecha_inicio_a"] != '':
+        temp2 = temp2[temp2["Fecha Semana"] > params['fecha_inicio_a']]
+    else:
+        temp2 = temp2[temp2["Fecha Semana"] > default_params['fecha_inicio_a']]
+    
+    #revisar si hay datos de facturacion de fechas seleccionadas
+    if temp2.empty:
+        return "[]","[]"
+    
+    #tabla pronostico simple
+    if modo_pronostico == "simple":
+        out_df = tablaPromedioSimple(temp2,params)
+        
+    #tabla pronostico temporal cerrado
+    if modo_pronostico == "temporal_c":
+        out_df = tablaTemporalCerrado(temp2,params)
+        
+    #tabla pronostico temporal abierto y temporal abierto con peso
+    if modo_pronostico == "temporal_a" or modo_pronostico == "temporal_a2":
+        out_df = tablaTemporalAbierto(temp,temp2,params,modo_pronostico)
+        
+    #tabla pronostico croston y croston tsb
+    if modo_pronostico == "croston" or modo_pronostico == "croston_tsb":
+        out_df = tablaCroston(temp2['Producto'].unique(), params, modo_pronostico)
+    
+    #nombres de columnas
+    if out_df.empty:        
+        return out_df.to_json(orient= 'records'), out_df.to_json(orient= 'records')
+    else:
+        out_df.columns = ['Fecha Semana','Nombre','Producto','Cantidad Pronostico']
+    
+    # TABLA RESUMEN-----------------------#
+    if modo_pronostico == "simple":
+        tecnica = "Promedio Simple"
+    elif modo_pronostico == "temporal_c":
+        tecnica = "Temporalidad cerrada"
+    elif modo_pronostico == "temporal_a":
+        tecnica = "Temporalidad abierta"
+    elif modo_pronostico == "temporal_a2":
+        tecnica = "Temporalidad abierta con peso"
+    elif modo_pronostico == "croston":
+        tecnica = "Croston"
+    elif modo_pronostico =="croston_tsb":
+        tecnica = "Croston TSB"
+    
+    resumen_df = []
+    for producto in out_df['Producto'].unique():
+        total = sum(out_df[out_df['Producto'] == producto]['Cantidad Pronostico'])
+        promedio_semana = total / len(weekDates(params['fecha_inicio'],params['fecha_fin']))        
+        fi = params['fecha_inicio']
+        ff = params['fecha_fin']
+        resumen_df.append([tecnica, producto, fi, ff, ceil(promedio_semana), total])
+    resumen_df = pd.DataFrame(resumen_df)
+    resumen_df.columns = ['Tecnica','Producto','Fecha inicio','Fecha fin','Promedio semana','Total']
+    #-------------------------------------#        
+    return out_df.to_json(orient= 'records'),resumen_df.to_json(orient = 'records')
+
+
+
 
