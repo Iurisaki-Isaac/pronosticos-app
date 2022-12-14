@@ -12,7 +12,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet"/>
     <script src="https://kit.fontawesome.com/155f922cd0.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>    
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@latest/dist/Chart.min.js"></script>
     <script src="public/main.js" defer></script>
     <title>Pronosticos Eltec</title>
 </head>
@@ -57,22 +58,16 @@
             <div class="controll-container">
                 <div class=""><label for="tasa">% de Crecimiento</label><input class="inputs-ex" type="number" id="tasa"></div>
                 <div class=""><label for="desperdicio">% de Desperdicio</label><input class="inputs-ex" type="number" id="desperdicio"></div>
-                <div class=""><label for="vida_producto">
-                    Vida del producto
-                    <div class="tooltip">
-                        <i class="fa-solid fa-circle-question"></i>
-                        <span class="tooltiptext">Por definir.</span>
-                    </div>
-                </label><input class="inputs-ex" type="number" id="vida_producto"></div>
                 <div id="sust_input_container"></div>
                 <span class="filter-button" onclick="filtrar()">Aceptar <i class="fa-solid fa-circle-arrow-right"></i></span>                                  
-            </div>            
+            </div>
         </div>
     </div>
     <div class="resultados">
         <div id="lds-spinner" class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>        
         <div class="table-container tabla-resumen" id="tabla-resumen"></div>
         <div class="table-container tabla-desglose" id="tabla"></div>
+        <div id="chart" class="grafica"><canvas id="lineChart"></canvas></div>        
     </div>    
 </body>
 </html>

@@ -14,7 +14,7 @@ default_params = {
     "fecha_inicio": '2022-12-07',
     "fecha_fin_a": '2022-12-06',
     "fecha_inicio_a": '2021-12-06',
-    "producto": ["EI-S4TA"],
+    "producto": ["EI-S4TA","BUJIA849"],
     "cliente": [],    
     "sustitucion": '',
     "tasa": 0,
@@ -50,7 +50,7 @@ def promedioSimpleDF(df,params):
     for producto in df['Producto'].unique():
         for cliente in df['Nombre'].unique():
             df_pc = df[(df['Nombre'] == cliente) & (df['Producto'] == producto)]
-            promedio = sum(df_pc['Cantidad Total']) / len(df_pc)
+            promedio = sum(df_pc['Cantidad Total']) / len(df_pc) if len(df_pc) > 0 else 0
             fecha_inicio_r = df_pc['Fecha Semana'].unique()[0]
             fecha_fin_r = df_pc['Fecha Semana'].unique()[-1]
             ps = sum(df_pc['Cantidad Total']) / len(weekDates(fecha_inicio_r,fecha_fin_r))
@@ -335,6 +335,22 @@ def tablaCroston(products_with_data ,params, modo_pronostico):
     
     return pd.DataFrame(out_df2)
 
+def dataParaGraficar(df, params):
+    dic = {}
+    values = []    
+    for producto in df['Producto'].unique():
+        temp = df[df['Producto'] == producto]
+        for fecha in weekDates(params['fecha_inicio'], params['fecha_fin']):            
+            if fecha.strftime("%Y-%m-%d") in temp['Fecha Semana'].values:                
+                v = temp[temp['Fecha Semana'] == fecha.strftime("%Y-%m-%d")]['Cantidad Pronostico'].values[0]
+                values.append(float(v))
+            else:
+                values.append(float(0))
+        dic[producto] = values
+        values = []
+    
+    return dic
+
 def filt(params,modo_pronostico):    
     temp = df
     #filtrado por cliente y producto (tomando en cuenta sustitución si es que la hay)
@@ -348,7 +364,7 @@ def filt(params,modo_pronostico):
         else:
             temp= temp[temp['Producto'].isin(params["producto"])]
     else:        
-        return "[]","[]"
+        return "[]","[]","[]"
     
     #tabla de fecha de facturación (análisis)
     temp2 = temp
@@ -363,7 +379,7 @@ def filt(params,modo_pronostico):
     
     #revisar si hay datos de facturacion de fechas seleccionadas
     if temp2.empty:
-        return "[]","[]"
+        return "[]","[]","[]"
     
     #tabla pronostico simple
     if modo_pronostico == "simple":
@@ -383,7 +399,7 @@ def filt(params,modo_pronostico):
     
     #nombres de columnas
     if out_df.empty:        
-        return out_df.to_json(orient= 'records'), out_df.to_json(orient= 'records')
+        return out_df.to_json(orient= 'records'), out_df.to_json(orient= 'records'), out_df.to_json(orient= 'records')
     else:
         out_df.columns = ['Fecha Semana','Nombre','Producto','Cantidad Pronostico']
     
@@ -411,8 +427,37 @@ def filt(params,modo_pronostico):
     resumen_df = pd.DataFrame(resumen_df)
     resumen_df.columns = ['Tecnica','Producto','Fecha inicio','Fecha fin','Promedio semana','Total']
     #-------------------------------------#        
-    return out_df.to_json(orient= 'records'),resumen_df.to_json(orient = 'records')
+    
+    dpg = dataParaGraficar(out_df, params)
+    return out_df.to_json(orient= 'records'),resumen_df.to_json(orient = 'records'), dpg
 
 
-
+def realPastData(params):
+    last_year_i = str(int(params["fecha_inicio"][:4])-1)
+    last_year_e = str(int(params["fecha_fin"][:4])-1)
+    
+    last_date_i = last_year_i + params["fecha_inicio"][4:]
+    last_date_e = last_year_e + params["fecha_fin"][4:]
+    
+    wd = weekDates(last_date_i,last_date_e)
+    df2 = pd.read_csv('data_procesada2.csv',encoding='latin1')
+    if len(params["cliente"]) > 0:
+        df2= df2[df2['Nombre'].isin(params['cliente'])]
+    df2 = df2[df2["Producto"].isin(params['producto'])]
+    
+    dic = {}
+    values = []
+    for producto in df2["Producto"].unique():
+        temp = df2[df2["Producto"] == producto]
+        for fecha in wd:
+            if fecha.strftime("%Y-%m-%d") in temp["Fecha Semana"].values:
+                v = temp[temp["Fecha Semana"] == fecha.strftime("%Y-%m-%d")]['Cantidad Total'].values[0]
+            else:
+                v = 0
+            values.append(float(v))
+        dic[producto] = values
+        values = []
+        
+    return dic
+    
 

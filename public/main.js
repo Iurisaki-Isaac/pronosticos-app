@@ -1,6 +1,14 @@
 var selected_products = new Array();
 var selected_customers = new Array();
 var selected_sus_product = ""
+var myCanvas = document.getElementById("lineChart").getContext("2d")
+var chart = new Chart(myCanvas, {
+    type: "line",
+    data: {
+        labels: [],
+        datasets: []           
+    }
+})
 
 obtenerClientes({})
 obtenerProductos({})
@@ -79,6 +87,7 @@ function filtrar(){
                 localStorage.setItem('Temporalidad cerrada',JSON.stringify(data.temporal_c));
                 localStorage.setItem('Temporalidad abierta',JSON.stringify(data.temporal_a));
                 localStorage.setItem('Temporalidad abierta con peso',JSON.stringify(data.temporal_a2));
+                localStorage.setItem('Graficar',JSON.stringify(data.graficar));
                 if(data.summary.length > 0) renderSummaryTable(data.summary)
                 else renderNoResults()   
             }
@@ -174,7 +183,9 @@ function renderSustList(data){
 }
 
 function renderTable(producto, modo_pronostico){
-    let data = localStorage.getItem(modo_pronostico)      
+    document.getElementById("chart").style.display = "none";
+    document.getElementById("tabla").style.display = "";
+    let data = localStorage.getItem(modo_pronostico)    
     let formatter = Intl.NumberFormat('en-US')
     let render = document.getElementById("tabla")
     let table = `<table><tr><th colspan="5">${producto}:${modo_pronostico}</th></tr>
@@ -203,6 +214,7 @@ function renderTable(producto, modo_pronostico){
 }
 
 function renderSummaryTable(data){
+    document.getElementById("chart").style.display = "none";    
     let formatter = Intl.NumberFormat('en-US')
     let render = document.getElementById("tabla-resumen")
     let table = `<table><tr><th colspan="5">Resumen</th></tr>
@@ -217,25 +229,104 @@ function renderSummaryTable(data){
     let producto_pasado = data[0]["Producto"]    
     data.forEach(element => {
         if(element["Producto"] != producto_pasado){            
-            table = table + `<tr class="header-tr"><td colspan="5"></td></tr>`            
+            table = table + `<tr class="header-tr">
+            <td colspan="5">
+                <p class="look-graph" onclick="renderLineChart('${producto_pasado}')">Ver gr&aacute;fico de ${producto_pasado} <i class="fa-solid fa-chart-line"></i></p>
+            </td></tr>`            
         }
         producto_pasado = element["Producto"]
         table = table + 
         `<tr>
-            <td><i class="look-table fa-solid fa-eye" onclick="renderTable('${element["Producto"]}','${element["Tecnica"]}')"></i></td>
+            <td>
+                <i class="look-table fa-solid fa-table" onclick="renderTable('${element["Producto"]}','${element["Tecnica"]}')"></i>                
+            </td>
             <td>${element["Tecnica"]}</td>
             <td>${element["Producto"]}</td>
             <td>${formatter.format(element["Promedio semana"])}</td>
             <td>${formatter.format(element["Total"])}</td>                 
         </tr>`
     });
-
-    table = table + `</table>`
+    table = table + `<tr class="header-tr">
+            <td colspan="5">
+                <p class="look-graph" onclick="renderLineChart('${producto_pasado}')">Ver gr&aacute;fico de ${producto_pasado} <i class="fa-solid fa-chart-line"></i></p>
+            </td></tr></table>`  
+    
     render.innerHTML = table
+}
+
+function renderLineChart(producto){
+    let data = JSON.parse(localStorage.getItem("Graficar"))    
+    let {label, datos_pasados, ...tecnicas} = data
+    let datos_pasados_producto = datos_pasados[producto]
+    let data_producto = {}
+
+    for(key in tecnicas){
+        data_producto[key] = tecnicas[key][producto]
+    }
+
+    chart.data.labels = label
+    chart.options.title.text = `Resultados para ${producto}`
+    chart.options.title.display = true
+    chart.data.datasets = [
+        {
+            label: "Promedio Simple",
+            borderColor: "red",
+            fill: false,
+            tension: 0.1,
+            data: data_producto.simple
+        },
+        {
+            label: "Temporalidad Cerrada",
+            borderColor: "blue",
+            fill: false,
+            tension: 0.1,
+            data: data_producto.temporal_c
+        },
+        {
+            label: "Temporalidad Abierta",
+            borderColor: "green",
+            fill: false,
+            tension: 0.1,
+            data: data_producto.temporal_a
+        },
+        {
+            label: "Temporalidad ACP",
+            borderColor: "yellow",
+            fill: false,
+            tension: 0.1,
+            data: data_producto.temporal_a2
+        },
+        {
+            label: "Croston",
+            borderColor: "purple",
+            fill: false,
+            tension: 0.1,
+            data: data_producto.croston
+        },
+        {
+            label: "Croston TSB",
+            borderColor: "orange",
+            fill: false,
+            tension: 0.1,
+            data: data_producto.croston_tsb            
+        },
+        {
+            label: "Ventas pasadas",
+            borderColor: "black",
+            fill: false,
+            tension: 0.1,
+            data: datos_pasados_producto,
+            borderDash: [10,5]
+        }
+    ]
+    chart.update();
+    document.getElementById("chart").style.display = "inline-block";
+    document.getElementById("tabla").style.display = "none";
 }
 
 function renderNoResults(){
     document.getElementById('lds-spinner').style.display = 'none';
+    document.getElementById("chart").style.display = "none";
     let render = document.getElementById("tabla")
     let render_resumen = document.getElementById("tabla-resumen")
     render.innerHTML = `<h2>No hay resultados.</h2>`
