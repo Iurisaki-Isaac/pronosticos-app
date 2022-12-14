@@ -26,12 +26,15 @@ class Serv(BaseHTTPRequestHandler):
                 content_len = int(self.headers.get('Content-Length'))
                 post_body = json.loads(self.rfile.read(content_len))
                 print(post_body)
-                response, summary1 =  processing.filt(post_body,"simple")
-                response2, summary2 =  processing.filt(post_body,"temporal_c")
-                response3, summary3 =  processing.filt(post_body,"temporal_a")
-                response4, summary4 =  processing.filt(post_body,"temporal_a2")
-                response5, summary5 =  processing.filt(post_body,"croston")
-                response6, summary6 =  processing.filt(post_body,"croston_tsb")
+                valores = {}
+                response1, summary1, valores["simple"] =  processing.filt(post_body,"simple")
+                response2, summary2, valores["temporal_c"] =  processing.filt(post_body,"temporal_c")
+                response3, summary3, valores["temporal_a"] =  processing.filt(post_body,"temporal_a")
+                response4, summary4, valores["temporal_a2"] =  processing.filt(post_body,"temporal_a2")
+                response5, summary5, valores["croston"] =  processing.filt(post_body,"croston")
+                response6, summary6, valores["croston_tsb"] =  processing.filt(post_body,"croston_tsb")                                            
+                valores["label"] = [date.strftime("%Y-%m-%d") for date in processing.weekDates(post_body["fecha_inicio"], post_body["fecha_fin"])]
+                valores["datos_pasados"] = processing.realPastData(post_body)                       
                 
                 general_summary = '['
                 first = True
@@ -41,7 +44,17 @@ class Serv(BaseHTTPRequestHandler):
                     first = False if first == True else first
                 general_summary = general_summary + ']'
 
-                data = '{"summary" :'+ general_summary +', "simple":'+ response+', "temporal_c":'+response2+', "temporal_a":'+response3+', "temporal_a2":'+response4+', "croston":'+response5+', "croston_tsb":'+response6+'}'                                                
+                data = {}
+                data["summary"] = json.loads(general_summary)
+                data["simple"] = json.loads(response1)
+                data["temporal_c"] = json.loads(response2)
+                data["temporal_a"] = json.loads(response3)
+                data["temporal_a2"] = json.loads(response4)
+                data["croston"] = json.loads(response5)
+                data["croston_tsb"] = json.loads(response6)
+                data["graficar"] = valores
+                data = json.dumps(data)
+                
                 self.wfile.write(bytes(data,'utf-8'))
 
             if self.path.endswith("/obtener-clientes"):

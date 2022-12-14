@@ -51,6 +51,15 @@ th{
   cursor: pointer;
 }
 
+.look-graph{
+  color: white;
+}
+
+.look-graph:hover{
+  color: black;
+  cursor: pointer;
+}
+
 .controles{
   display: flex;
   width: 100%;
@@ -285,6 +294,14 @@ th{
   width: 34%;
 }
 
+.grafica{
+  display: none;
+  vertical-align: top;
+  width: 58%;
+  right: 2%;
+  position: absolute;
+}
+
 #tabla-resumen h3{
   margin: 0;
   font-family: 'Montserrat', sans-serif;
@@ -299,8 +316,6 @@ th{
 .header-tr th, .header-tr td{
   background-color: gray;
 }
-
-
 
 .controll-container .select-modo{
   width: 50%;
@@ -382,3 +397,5 @@ th{
     opacity: 0;
   }
 }
+
+
