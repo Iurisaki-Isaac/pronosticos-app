@@ -188,7 +188,7 @@ def tablaPromedioSimple(df,params):
         for cliente in df_ps["Cliente"].unique():
             for producto in df_ps["Producto"].unique():
                 cantidad = df_ps[(df_ps["Producto"] == producto) & (df_ps["Cliente"] == cliente)]["Promedio Simple"].unique()[0]
-                out_df.append([date.strftime('%Y-%m-%d'),cliente,producto,ceil(cantidad)])
+                out_df.append([date.strftime('%Y-%m-%d'),cliente,producto,cantidad])
         
     return pd.DataFrame(out_df)
 
@@ -218,7 +218,7 @@ def tablaTemporalCerrado(df,params):
                     cantidad = cantidad * (1+(float(params["tasa"])/100))
                 if params["desperdicio"] != '':
                     cantidad = cantidad * (1+(float(params["desperdicio"])/100))
-                out_df.append([date.strftime('%Y-%m-%d'),cliente,producto,ceil(cantidad)]) if cantidad>0 else out_df
+                out_df.append([date.strftime('%Y-%m-%d'),cliente,producto,cantidad]) if cantidad>0 else out_df
         
     return pd.DataFrame(out_df)
     
@@ -423,7 +423,7 @@ def filt(params,modo_pronostico):
         promedio_semana = total / len(weekDates(params['fecha_inicio'],params['fecha_fin']))        
         fi = params['fecha_inicio']
         ff = params['fecha_fin']
-        resumen_df.append([tecnica, producto, fi, ff, ceil(promedio_semana), total])
+        resumen_df.append([tecnica, producto, fi, ff, promedio_semana, total])
     resumen_df = pd.DataFrame(resumen_df)
     resumen_df.columns = ['Tecnica','Producto','Fecha inicio','Fecha fin','Promedio semana','Total']
     #-------------------------------------#        

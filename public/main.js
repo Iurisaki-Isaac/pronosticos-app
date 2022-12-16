@@ -74,6 +74,7 @@ function filtrar(){
                 let data = {}
                 try{
                     data = JSON.parse(this.responseText)
+                    console.log(data)
                 }
                 catch(err){
                     console.log(err)
@@ -87,6 +88,8 @@ function filtrar(){
                 localStorage.setItem('Temporalidad cerrada',JSON.stringify(data.temporal_c));
                 localStorage.setItem('Temporalidad abierta',JSON.stringify(data.temporal_a));
                 localStorage.setItem('Temporalidad abierta con peso',JSON.stringify(data.temporal_a2));
+                localStorage.setItem('Croston',JSON.stringify(data.croston));
+                localStorage.setItem('Croston TSB',JSON.stringify(data.croston_tsb));
                 localStorage.setItem('Graficar',JSON.stringify(data.graficar));
                 if(data.summary.length > 0) renderSummaryTable(data.summary)
                 else renderNoResults()   
@@ -205,7 +208,7 @@ function renderTable(producto, modo_pronostico){
             <td>${element["Fecha Semana"]}</td>        
             <td>${element["Nombre"]}</td>
             <td>${element["Producto"]}</td>
-            <td>${formatter.format(element['Cantidad Pronostico'])}</td>
+            <td>${formatter.format(Math.ceil(element['Cantidad Pronostico']))}</td>
         </tr>`
     });
 
@@ -242,8 +245,8 @@ function renderSummaryTable(data){
             </td>
             <td>${element["Tecnica"]}</td>
             <td>${element["Producto"]}</td>
-            <td>${formatter.format(element["Promedio semana"])}</td>
-            <td>${formatter.format(element["Total"])}</td>                 
+            <td>${formatter.format(Math.ceil(element["Promedio semana"]))}</td>
+            <td>${formatter.format(Math.ceil(element["Total"]))}</td>                 
         </tr>`
     });
     table = table + `<tr class="header-tr">
@@ -267,6 +270,7 @@ function renderLineChart(producto){
     chart.data.labels = label
     chart.options.title.text = `Resultados para ${producto}`
     chart.options.title.display = true
+    chart.options.title.fontSize = 18
     chart.data.datasets = [
         {
             label: "Promedio Simple",
@@ -280,14 +284,16 @@ function renderLineChart(producto){
             borderColor: "blue",
             fill: false,
             tension: 0.1,
-            data: data_producto.temporal_c
+            data: data_producto.temporal_c,
+            borderDash: [5,5]
         },
         {
             label: "Temporalidad Abierta",
-            borderColor: "green",
+            borderColor: "rgb(30,255,30)",
             fill: false,
             tension: 0.1,
-            data: data_producto.temporal_a
+            data: data_producto.temporal_a,
+            borderDash: [5,10]
         },
         {
             label: "Temporalidad ACP",
@@ -298,7 +304,7 @@ function renderLineChart(producto){
         },
         {
             label: "Croston",
-            borderColor: "purple",
+            borderColor: "magenta",
             fill: false,
             tension: 0.1,
             data: data_producto.croston
