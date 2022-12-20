@@ -47,10 +47,7 @@ function obtenerProductos(data){
       }
 }
 
-function filtrar(){
-    document.getElementById('lds-spinner').style.display = 'inline-block';
-    document.getElementById('tabla').innerHTML = '';
-    document.getElementById('tabla-resumen').style.display = 'none';
+function filtrar(){    
     let xhr = new XMLHttpRequest();
     let data = {
         "fecha_inicio": document.getElementById("fecha_inicio").value,
@@ -64,6 +61,9 @@ function filtrar(){
         "sustitucion": document.getElementById("sustitucion").value
     };
     if(verifyRequieredFields(data) == null){
+        document.getElementById('lds-spinner').style.display = 'inline-block';
+        document.getElementById('tabla').innerHTML = '';
+        document.getElementById('tabla-resumen').style.display = 'none';
         xhr.open("POST", "/filtrar", true);
         xhr.setRequestHeader("Accept", "application/json");
         xhr.setRequestHeader("Content-Type", "application/json");    
@@ -73,8 +73,7 @@ function filtrar(){
             if(this.status == 200){
                 let data = {}
                 try{
-                    data = JSON.parse(this.responseText)
-                    console.log(data)
+                    data = JSON.parse(this.responseText)                    
                 }
                 catch(err){
                     console.log(err)
@@ -126,6 +125,7 @@ function getSelectedValues(id) {
   }
 
 function renderList(data,element_id,id){
+    data = data.sort((a, b) => a.localeCompare(b))
     let preselected_elements = []
     if(id == 'customer') preselected_elements = selected_customers
     if(id == 'product') preselected_elements = selected_products
@@ -160,6 +160,7 @@ function updateList(list){
 }
 
 function renderSustList(data){
+    data = data.sort((a, b) => a.localeCompare(b))
     let render = document.getElementById("sust_input_container")
     let list = `<label for="sustitucion">
         Sustituci&oacute;n

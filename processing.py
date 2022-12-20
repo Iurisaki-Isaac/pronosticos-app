@@ -48,7 +48,7 @@ def getMonthAndDay(fecha):
 def promedioSimpleDF(df,params):
     df_ps = []
     for producto in df['Producto'].unique():
-        for cliente in df['Nombre'].unique():
+        for cliente in df[df['Producto'] == producto]['Nombre'].unique():
             df_pc = df[(df['Nombre'] == cliente) & (df['Producto'] == producto)]
             promedio = sum(df_pc['Cantidad Total']) / len(df_pc) if len(df_pc) > 0 else 0
             fecha_inicio_r = df_pc['Fecha Semana'].unique()[0]
@@ -186,7 +186,7 @@ def tablaPromedioSimple(df,params):
     out_df = []
     for date in weekDates(params["fecha_inicio"], params["fecha_fin"]):
         for cliente in df_ps["Cliente"].unique():
-            for producto in df_ps["Producto"].unique():
+            for producto in df_ps[df_ps["Cliente"] == cliente]["Producto"].unique():
                 cantidad = df_ps[(df_ps["Producto"] == producto) & (df_ps["Cliente"] == cliente)]["Promedio Simple"].unique()[0]
                 out_df.append([date.strftime('%Y-%m-%d'),cliente,producto,cantidad])
         
@@ -214,33 +214,30 @@ def tablaTemporalCerrado(df,params):
                 temp3 = results_df[(results_df[2] == date.month) & (results_df[3] == floor(date.day/8)+1)]
                 temp3 = temp3[(temp3[0] == cliente) & (temp3[1] == producto)]
                 cantidad = temp3[4].unique()[0] if len(temp3) > 0 else 0
-                if params["tasa"] != '':
-                    cantidad = cantidad * (1+(float(params["tasa"])/100))
-                if params["desperdicio"] != '':
-                    cantidad = cantidad * (1+(float(params["desperdicio"])/100))
                 out_df.append([date.strftime('%Y-%m-%d'),cliente,producto,cantidad]) if cantidad>0 else out_df
         
     return pd.DataFrame(out_df)
     
     
-def tablaTemporalAbierto(df, df2, params, modo_pronostico):    
+def tablaTemporalAbierto(df, params, modo_pronostico):    
     if modo_pronostico == "temporal_a":
         dist_table = distAC(params)
     if modo_pronostico == "temporal_a2":
         dist_table = distAllYears(params)
     
-    df_ps = promedioSimpleDF(df2,params)
+    df_ps = promedioSimpleDF(df,params)
     
     out_df = []
     for fecha in weekDates(params['fecha_inicio'],params['fecha_fin']):
-        for producto in df2['Producto'].unique():
-            df2_p = df2[df2['Producto'] == producto]
-            for cliente in df2_p['Nombre'].unique():                
+        for producto in df['Producto'].unique():
+            df_p = df[df['Producto'] == producto]
+            for cliente in df_p['Nombre'].unique():                
                 #tomo el promedio simple del input del usuario
                 mes, dia = getMonthAndDay(fecha.strftime("%Y-%m-%d"))                
                 promedio = df_ps[(df_ps['Cliente'] == cliente) & (df_ps['Producto'] == producto)]['Promedio Simple IU'].unique()[0]
                 total_extrapolado = promedio * 48
-                porcentaje = dist_table[(dist_table['Producto'] == producto) & (dist_table['Cliente'] == cliente) & (dist_table['Mes'] == mes) & (dist_table['Dia'] == dia)]['Porcentaje'].unique()[0]                
+                temp = dist_table[(dist_table['Producto'] == producto) & (dist_table['Cliente'] == cliente) & (dist_table['Mes'] == mes) & (dist_table['Dia'] == dia)]
+                porcentaje = temp['Porcentaje'].unique()[0] if not temp.empty else 0
                 pronostico = total_extrapolado * porcentaje
                 if pronostico > 0:
                     out_df.append([fecha.strftime("%Y-%m-%d"), cliente, producto, pronostico])
@@ -391,7 +388,7 @@ def filt(params,modo_pronostico):
         
     #tabla pronostico temporal abierto y temporal abierto con peso
     if modo_pronostico == "temporal_a" or modo_pronostico == "temporal_a2":
-        out_df = tablaTemporalAbierto(temp,temp2,params,modo_pronostico)
+        out_df = tablaTemporalAbierto(temp2,params,modo_pronostico)
         
     #tabla pronostico croston y croston tsb
     if modo_pronostico == "croston" or modo_pronostico == "croston_tsb":
@@ -402,6 +399,12 @@ def filt(params,modo_pronostico):
         return out_df.to_json(orient= 'records'), out_df.to_json(orient= 'records'), out_df.to_json(orient= 'records')
     else:
         out_df.columns = ['Fecha Semana','Nombre','Producto','Cantidad Pronostico']
+
+    #aplicar tasa de crecimiento y desperdicio
+    if params["tasa"] != '':
+        out_df['Cantidad Pronostico'] = out_df['Cantidad Pronostico'] * (1+(float(params["tasa"])/100))
+    if params["desperdicio"] != '':
+        out_df['Cantidad Pronostico'] = out_df['Cantidad Pronostico'] * (1+(float(params["desperdicio"])/100))
     
     # TABLA RESUMEN-----------------------#
     if modo_pronostico == "simple":
